@@ -1,0 +1,41 @@
+name: Weekly Reddit Digest Generator
+
+# 触发条件设置
+on:
+  schedule:
+    # 设定为每周五早上 8:00 (UTC 时间，北京时间下午 4:00) 运行
+    - cron: '0 8 * * 5'
+  workflow_dispatch: # 允许你在 GitHub 页面手动点击运行进行测试
+
+jobs:
+  build-and-send:
+    runs-on: ubuntu-latest # Ubuntu 环境自带许多必要的 C 库
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install System Dependencies for WeasyPrint
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz-subset0
+
+    - name: Install Python Dependencies
+      run: |
+        pip install -r requirements.txt
+
+    - name: Run Pipeline and Send Email
+      env:
+        REDDIT_CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
+        REDDIT_CLIENT_SECRET: ${{ secrets.REDDIT_CLIENT_SECRET }}
+        REDDIT_USERNAME: ${{ secrets.REDDIT_USERNAME }}
+        RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+        SUBSCRIBERS: ${{ secrets.SUBSCRIBERS }}
+        SENDER_EMAIL: ${{ secrets.SENDER_EMAIL }}
+      run: |
+        python main.py
